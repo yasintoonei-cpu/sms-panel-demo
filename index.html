@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل پیامک — دفترچه تلفن و ارسال ساده</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16213E;
+    --ink-soft:#4B5470;
+    --paper:#F3F5FA;
+    --surface:#FFFFFF;
+    --accent:#0F9B8E;
+    --accent-dark:#0B7A70;
+    --accent-warm:#F2A541;
+    --line:#E3E6EE;
+    --danger:#E15554;
+    --danger-soft:#FCEBEA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Vazirmatn',sans-serif;background:var(--paper);color:var(--ink);}
+  .app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{width:230px;flex-shrink:0;background:var(--ink);color:#fff;padding:26px 20px;display:flex;flex-direction:column;gap:28px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-warm));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+  .brand-name{font-weight:700;font-size:15px;}
+  .brand-sub{font-size:11px;color:#9AA3C2;margin-top:2px;}
+  nav{display:flex;flex-direction:column;gap:6px;}
+  .nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;background:transparent;border:none;color:#C6CBE0;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;text-align:right;transition:.15s;}
+  .nav-btn:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .nav-btn.active{background:rgba(15,155,142,.18);color:#fff;box-shadow:inset 3px 0 0 var(--accent);}
+  .nav-icon{width:18px;text-align:center;}
+
+  /* Content */
+  .content{flex:1;padding:30px 34px;overflow-x:hidden;}
+  .page{display:none;}
+  .page.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  h1{font-size:21px;font-weight:800;margin:0 0 4px;}
+  .page-desc{color:var(--ink-soft);font-size:13.5px;margin:0 0 22px;}
+
+  /* Notice banner */
+  .notice{display:flex;align-items:center;gap:14px;background:#EAF7F5;border:1px solid #C9EAE5;border-radius:var(--radius);padding:14px 18px;margin-bottom:24px;}
+  .notice-icon{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;}
+  .notice-text{font-size:13.5px;line-height:1.7;color:#0D5A53;flex:1;}
+  .notice-link{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s;}
+  .notice-link:hover{background:var(--accent-dark);}
+
+  /* Phonebook layout */
+  .pb-grid{display:grid;grid-template-columns:290px 1fr;gap:20px;align-items:start;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);}
+  .groups-card{padding:16px;}
+  .groups-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .groups-head h3{font-size:14px;font-weight:700;margin:0;}
+  .add-group-btn{background:var(--ink);color:#fff;border:none;padding:7px 12px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .add-group-btn:hover{background:#243055;}
+  .new-group-form{display:none;gap:8px;margin-bottom:12px;flex-direction:column;}
+  .new-group-form.show{display:flex;}
+  .new-group-form input{padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;}
+  .new-group-form .row{display:flex;gap:8px;}
+  .new-group-form .row button{flex:1;padding:8px;border-radius:8px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .btn-confirm{background:var(--accent);color:#fff;}
+  .btn-cancel{background:var(--line);color:var(--ink-soft);}
+
+  .group-tab{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 10px;border-radius:10px;cursor:pointer;margin-bottom:6px;border:1px solid transparent;transition:.15s;}
+  .group-tab:hover{background:#F7F8FC;}
+  .group-tab.selected{background:#F1FAF8;border-color:#C9EAE5;}
+  .tab-letter{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;flex-shrink:0;}
+  .tab-info{flex:1;min-width:0;}
+  .tab-name{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tab-count{font-size:11.5px;color:var(--ink-soft);}
+  .tab-del{background:none;border:none;color:#B7BCD1;font-size:15px;cursor:pointer;padding:2px 4px;border-radius:6px;flex-shrink:0;}
+  .tab-del:hover{color:var(--danger);background:var(--danger-soft);}
+  .empty-groups{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:20px 6px;}
+
+  .contacts-card{padding:20px;}
+  .contacts-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .contacts-head h3{font-size:15px;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;}
+  .badge{background:var(--accent-warm);color:#5A3B00;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;}
+  .add-contact-form{display:flex;gap:8px;margin-bottom:16px;}
+  .add-contact-form input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:13px;}
+  .add-contact-form button{background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}
+  .add-contact-form button:hover{background:var(--accent-dark);}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:right;color:var(--ink-soft);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:10px;border-bottom:1px solid #EEF0F6;}
+  td.num{font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+  .icon-btn{background:none;border:1px solid var(--line);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink-soft);}
+  .icon-btn:hover{background:#F7F8FC;}
+  .icon-btn.del:hover{background:var(--danger-soft);color:var(--danger);border-color:#F3CFCE;}
+  .edit-input{width:100%;padding:7px 9px;border:1px solid var(--accent);border-radius:7px;font-family:inherit;font-size:13px;}
+  .empty-contacts{text-align:center;padding:40px 10px;color:var(--ink-soft);font-size:13.5px;}
+  .no-group-selected{text-align:center;padding:60px 10px;color:var(--ink-soft);font-size:13.5px;}
+
+  /* Send page */
+  .send-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;}
+  .send-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;}
+  select, textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:13.5px;background:#fff;}
+  textarea{resize:vertical;min-height:110px;line-height:1.7;}
+  .char-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+
+  .tabs{display:flex;gap:6px;background:#EFF1F7;border-radius:10px;padding:4px;margin-bottom:14px;}
+  .tab-btn{flex:1;padding:9px;text-align:center;border:none;background:none;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+  .tab-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .recipient-panel{display:none;}
+  .recipient-panel.active{display:block;}
+
+  .bank-item, .group-check{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;cursor:pointer;}
+  .bank-item:hover, .group-check:hover{border-color:#C9EAE5;}
+  .bank-item input, .group-check input{width:16px;height:16px;accent-color:var(--accent);}
+  .bank-name{flex:1;font-size:13px;font-weight:600;}
+  .bank-count{font-size:11.5px;color:var(--ink-soft);}
+
+  .summary-card{background:var(--ink);color:#fff;border-radius:var(--radius);padding:20px;position:sticky;top:20px;}
+  .summary-card h3{font-size:14px;margin:0 0 16px;font-weight:700;}
+  .summary-row{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1);}
+  .summary-row b{font-variant-numeric:tabular-nums;color:var(--accent-warm);}
+  .send-btn{width:100%;margin-top:16px;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:10px;font-family:inherit;font-weight:800;font-size:14.5px;cursor:pointer;}
+  .send-btn:hover{background:var(--accent-dark);}
+  .send-btn:disabled{background:#3A4568;cursor:not-allowed;}
+  .send-hint{font-size:11px;color:#9AA3C2;margin-top:10px;line-height:1.7;}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 22px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.2);}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">پ</div>
+      <div>
+        <div class="brand-name">پنل پیامک</div>
+        <div class="brand-sub">نسخه دمو</div>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-page="phonebook" onclick="goTo('phonebook')">
+        <span class="nav-icon">📇</span> دفترچه تلفن
+      </button>
+      <button class="nav-btn" data-page="send" onclick="goTo('send')">
+        <span class="nav-icon">✉️</span> ارسال ساده
+      </button>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+    <!-- PHONEBOOK PAGE -->
+    <section class="page active" id="page-phonebook">
+      <h1>دفترچه تلفن</h1>
+      <p class="page-desc">مخاطبین‌تان را در گروه‌های دلخواه دسته‌بندی کنید تا در زمان ارسال پیامک، انتخابشان آسان باشد.</p>
+
+      <div class="notice">
+        <div class="notice-icon">؟</div>
+        <div class="notice-text">
+          برای ارسال پیامک به این مخاطبین، ابتدا به بخش «ارسال ساده» بروید و در قسمت گیرندگان، گزینهٔ «دفترچه تلفن» را انتخاب کنید.
+        </div>
+        <button class="notice-link" onclick="goToSendFromNotice()">رفتن به ارسال ساده ←</button>
+      </div>
+
+      <div class="pb-grid">
+        <div class="card groups-card">
+          <div class="groups-head">
+            <h3>گروه‌ها</h3>
+            <button class="add-group-btn" onclick="toggleNewGroupForm()">+ گروه جدید</button>
+          </div>
+          <div class="new-group-form" id="newGroupForm">
+            <input type="text" id="newGroupName" placeholder="نام گروه (مثلاً: مشتریان تهران)">
+            <div class="row">
+              <button class="btn-confirm" onclick="createGroup()">ساخت گروه</button>
+              <button class="btn-cancel" onclick="toggleNewGroupForm()">انصراف</button>
+            </div>
+          </div>
+          <div id="groupsList"></div>
+        </div>
+
+        <div class="card contacts-card" id="contactsCard"></div>
+      </div>
+    </section>
+
+    <!-- SEND PAGE -->
+    <section class="page" id="page-send">
+      <h1>ارسال ساده</h1>
+      <p class="page-desc">یک شماره ارسال انتخاب کنید، متن پیامک را بنویسید و گیرندگان را مشخص کنید.</p>
+
+      <div class="send-grid">
+        <div class="send-card">
+          <div class="field">
+            <label>شماره ارسال (خط)</label>
+            <select id="senderNumber" onchange="renderSummary()">
+              <option value="">— انتخاب کنید —</option>
+              <option value="3000123456">3000123456 (پیش‌فرض)</option>
+              <option value="5000112233">5000112233</option>
+              <option value="02191012345">02191012345</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>متن پیامک</label>
+            <textarea id="messageText" placeholder="متن پیامک خود را بنویسید…" oninput="renderSummary()"></textarea>
+            <div class="char-meta">
+              <span id="charCount">۰ کاراکتر</span>
+              <span id="smsCount">۰ پیامک</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>گیرندگان</label>
+            <div class="tabs">
+              <button class="tab-btn active" data-mode="manual" onclick="setRecipientMode('manual')">ورود دستی</button>
+              <button class="tab-btn" data-mode="bank" onclick="setRecipientMode('bank')">بانک شماره</button>
+              <button class="tab-btn" data-mode="phonebook" onclick="setRecipientMode('phonebook')">دفترچه تلفن</button>
+            </div>
+
+            <div class="recipient-panel active" id="panel-manual">
+              <textarea id="manualNumbers" placeholder="شماره‌ها را با کاما یا خط جدید از هم جدا کنید&#10;مثال: 09121234567, 09359876543" oninput="renderSummary()"></textarea>
+            </div>
+
+            <div class="recipient-panel" id="panel-bank">
+              <div id="bankList"></div>
+            </div>
+
+            <div class="recipient-panel" id="panel-phonebook">
+              <div id="phonebookCheckList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3>خلاصهٔ ارسال</h3>
+          <div class="summary-row"><span>تعداد گیرندگان</span><b id="sumRecipients">۰</b></div>
+          <div class="summary-row"><span>تعداد پیامک هر گیرنده</span><b id="sumSmsPerUser">۰</b></div>
+          <div class="summary-row"><span>مجموع پیامک ارسالی</span><b id="sumTotal">۰</b></div>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>ارسال پیامک</button>
+          <div class="send-hint">این یک نمونهٔ اولیه (دمو) است؛ دکمهٔ ارسال، پیامک واقعی نمی‌فرستد.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ---------- STATE ---------- */
+let groups = [
+  { id: 1, name: 'مشتریان VIP', color: '#0F9B8E',
+    contacts: [
+      { id: 1, name: 'علی رضایی', phone: '09121234567' },
+      { id: 2, name: 'سارا محمدی', phone: '09351234567' },
+    ]},
+  { id: 2, name: 'همکاران فروش', color: '#F2A541',
+    contacts: [
+      { id: 3, name: 'حسین کریمی', phone: '09191234567' },
+    ]},
+];
+let nextGroupId = 3, nextContactId = 4;
+let selectedGroupId = groups[0].id;
+
+const numberBanks = [
+  { id: 'b1', name: 'مشتریان تازه ثبت‌نامی', count: 2450 },
+  { id: 'b2', name: 'لیست کمپین بهار', count: 1200 },
+  { id: 'b3', name: 'مخاطبین نمایشگاه', count: 340 },
+];
+
+let recipientMode = 'manual';
+let selectedBankIds = new Set();
+let selectedGroupIdsForSend = new Set();
+
+/* ---------- NAV ---------- */
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
+}
+function goToSendFromNotice(){
+  goTo('send');
+  setRecipientMode('phonebook');
+}
+
+/* ---------- GROUPS ---------- */
+function toggleNewGroupForm(){
+  const f = document.getElementById('newGroupForm');
+  f.classList.toggle('show');
+  if(f.classList.contains('show')) document.getElementById('newGroupName').focus();
+}
+function createGroup(){
+  const input = document.getElementById('newGroupName');
+  const name = input.value.trim();
+  if(!name) return;
+  const palette = ['#0F9B8E','#F2A541','#5B6EE1','#E15554','#3AA655','#C0559A'];
+  const color = palette[groups.length % palette.length];
+  const g = { id: nextGroupId++, name, color, contacts: [] };
+  groups.push(g);
+  selectedGroupId = g.id;
+  input.value='';
+  document.getElementById('newGroupForm').classList.remove('show');
+  renderGroups();
+  renderContacts();
+  renderPhonebookCheckList();
+}
+function deleteGroup(id, ev){
+  ev.stopPropagation();
+  const g = groups.find(x=>x.id===id);
+  if(!confirm(`گروه «${g.name}» و همهٔ مخاطبینش حذف شود؟`)) return;
+  groups = groups.filter(x=>x.id!==id);
+  selectedGroupIdsForSend.delete(id);
+  if(selectedGroupId===id) selectedGroupId = groups[0] ? groups[0].id : null;
+  renderGroups(); renderContacts(); renderPhonebookCheckList(); renderSummary();
+}
+function selectGroup(id){
+  selectedGroupId = id;
+  renderGroups();
+  renderContacts();
+}
+function renderGroups(){
+  const list = document.getElementById('groupsList');
+  if(groups.length===0){
+    list.innerHTML = '<div class="empty-groups">هنوز گروهی نساخته‌اید</div>';
+    return;
+  }
+  list.innerHTML = groups.map(g => `
+    <div class="group-tab ${g.id===selectedGroupId?'selected':''}" onclick="selectGroup(${g.id})">
+      <div class="tab-letter" style="background:${g.color}">${g.name.trim()[0] || '؟'}</div>
+      <div class="tab-info">
+        <div class="tab-name">${escapeHtml(g.name)}</div>
+        <div class="tab-count">${g.contacts.length} مخاطب</div>
+      </div>
+      <button class="tab-del" onclick="deleteGroup(${g.id}, event)" title="حذف گروه">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ---------- CONTACTS ---------- */
+function renderContacts(){
+  const card = document.getElementById('contactsCard');
+  const g = groups.find(x=>x.id===selectedGroupId);
+  if(!g){
+    card.innerHTML = '<div class="no-group-selected">یک گروه انتخاب کنید یا گروه جدیدی بسازید</div>';
+    return;
+  }
+  card.innerHTML = `
+    <div class="contacts-head">
+      <h3>${escapeHtml(g.name)} <span class="badge">${g.contacts.length} مخاطب</span></h3>
+    </div>
+    <div class="add-contact-form">
+      <input type="text" id="newContactName" placeholder="نام مخاطب">
+      <input type="text" id="newContactPhone" placeholder="شماره موبایل">
+      <button onclick="addContact(${g.id})">افزودن</button>
+    </div>
+    ${g.contacts.length===0 ? `<div class="empty-contacts">هنوز مخاطبی در این گروه اضافه نشده</div>` : `
+    <table>
+      <thead><tr><th>نام</th><th>شماره</th><th></th></tr></thead>
+      <tbody id="contactsBody">
+        ${g.contacts.map(c => contactRow(g.id, c)).join('')}
+      </tbody>
+    </table>`}
+  `;
+}
+function contactRow(groupId, c){
+  return `
+    <tr id="row-${c.id}">
+      <td>${escapeHtml(c.name)}</td>
+      <td class="num">${escapeHtml(c.phone)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="icon-btn" title="ویرایش" onclick="editContact(${groupId}, ${c.id})">✎</button>
+          <button class="icon-btn del" title="حذف" onclick="deleteContact(${groupId}, ${c.id})">✕</button>
+        </div>
+      </td>
+    </tr>`;
+}
+function addContact(groupId){
+  const nameEl = document.getElementById('newContactName');
+  const phoneEl = document.getElementById('newContactPhone');
+  const name = nameEl.value.trim(), phone = phoneEl.value.trim();
+  if(!name || !phone) return;
+  const g = groups.find(x=>x.id===groupId);
+  g.contacts.push({ id: nextContactId++, name, phone });
+  renderGroups(); renderContacts(); renderPhonebookCheckList();
+}
+function deleteContact(groupId, contactId){
+  const g = groups.find(x=>x.id===groupId);
+  g.contacts = g.contacts.filter(c=>c.id!==contactId);
+  renderGroups(); renderContacts(); renderPhonebookCheckList();
+}
+function editContact(groupId, contactId){
+  const g = groups.find(x=>x.id===groupId);
+  const c = g.contacts.find(x=>x.id===contactId);
+  const row = document.getElementById('row-'+contactId);
+  row.innerHTML = `
+    <td><input class="edit-input" id="edit-name-${contactId}" value="${escapeHtml(c.name)}"></td>
+    <td><input class="edit-input" id="edit-phone-${contactId}" value="${escapeHtml(c.phone)}"></td>
+    <td>
+      <div class="row-actions">
+        <button class="icon-btn" title="ذخیره" onclick="saveContact(${groupId}, ${contactId})">✓</button>
+        <button class="icon-btn" title="انصراف" onclick="renderContacts()">✕</button>
+      </div>
+    </td>`;
+}
+function saveContact(groupId, contactId){
+  const g = groups.find(x=>x.id===groupId);
+  const c = g.contacts.find(x=>x.id===contactId);
+  c.name = document.getElementById('edit-name-'+contactId).value.trim() || c.name;
+  c.phone = document.getElementById('edit-phone-'+contactId).value.trim() || c.phone;
+  renderContacts(); renderPhonebookCheckList();
+}
+
+/* ---------- SEND PAGE ---------- */
+function setRecipientMode(mode){
+  recipientMode = mode;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  document.querySelectorAll('.recipient-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+mode).classList.add('active');
+  renderSummary();
+}
+function renderBankList(){
+  const el = document.getElementById('bankList');
+  el.innerHTML = numberBanks.map(b => `
+    <label class="bank-item">
+      <input type="checkbox" ${selectedBankIds.has(b.id)?'checked':''} onchange="toggleBank('${b.id}')">
+      <span class="bank-name">${escapeHtml(b.name)}</span>
+      <span class="bank-count">${b.count.toLocaleString('fa-IR')} شماره</span>
+    </label>`).join('');
+}
+function toggleBank(id){
+  if(selectedBankIds.has(id)) selectedBankIds.delete(id); else selectedBankIds.add(id);
+  renderSummary();
+}
+function renderPhonebookCheckList(){
+  const el = document.getElementById('phonebookCheckList');
+  if(groups.length===0){
+    el.innerHTML = '<div class="empty-groups">گروهی در دفترچه تلفن وجود ندارد</div>';
+    return;
+  }
+  el.innerHTML = groups.map(g => `
+    <label class="group-check">
+      <input type="checkbox" ${selectedGroupIdsForSend.has(g.id)?'checked':''} onchange="toggleSendGroup(${g.id})">
+      <div class="tab-letter" style="background:${g.color};width:26px;height:26px;font-size:12px;">${g.name.trim()[0]||'؟'}</div>
+      <span class="bank-name">${escapeHtml(g.name)}</span>
+      <span class="bank-count">${g.contacts.length} مخاطب</span>
+    </label>`).join('');
+}
+function toggleSendGroup(id){
+  if(selectedGroupIdsForSend.has(id)) selectedGroupIdsForSend.delete(id); else selectedGroupIdsForSend.add(id);
+  renderSummary();
+}
+
+function countManualNumbers(){
+  const raw = document.getElementById('manualNumbers').value;
+  return raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean).length;
+}
+function getRecipientCount(){
+  if(recipientMode==='manual') return countManualNumbers();
+  if(recipientMode==='bank') return numberBanks.filter(b=>selectedBankIds.has(b.id)).reduce((s,b)=>s+b.count,0);
+  if(recipientMode==='phonebook') return groups.filter(g=>selectedGroupIdsForSend.has(g.id)).reduce((s,g)=>s+g.contacts.length,0);
+  return 0;
+}
+function toFa(n){ return n.toLocaleString('fa-IR'); }
+
+function renderSummary(){
+  const text = document.getElementById('messageText').value;
+  const len = text.length;
+  const smsPerUser = len===0 ? 0 : Math.ceil(len/70);
+  document.getElementById('charCount').textContent = `${toFa(len)} کاراکتر`;
+  document.getElementById('smsCount').textContent = `${toFa(smsPerUser)} پیامک`;
+
+  const recipients = getRecipientCount();
+  document.getElementById('sumRecipients').textContent = toFa(recipients);
+  document.getElementById('sumSmsPerUser').textContent = toFa(smsPerUser);
+  document.getElementById('sumTotal').textContent = toFa(smsPerUser*recipients);
+
+  const sender = document.getElementById('senderNumber').value;
+  const canSend = sender && len>0 && recipients>0;
+  document.getElementById('sendBtn').disabled = !canSend;
+}
+
+function sendMessage(){
+  showToast('پیامک شما با موفقیت در صف ارسال قرار گرفت ✓');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- INIT ---------- */
+renderGroups();
+renderContacts();
+renderBankList();
+renderPhonebookCheckList();
+renderSummary();
+</script>
+</body>
+</html>
